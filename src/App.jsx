@@ -107,12 +107,14 @@ function App() {
         setHasQueried(true)
     }
     return (
-        <Box w="100vw">
+        <Box>
             <Flex justify="end" mr="16px" mt="16px">
                 {!connectedAccount ? (
                     <Button onClick={connectWeb3Wallet}>Connect Wallet</Button>
                 ) : (
-                    <Button>{ensName.length > 0 ? ensName : trimAddress(connectedAccount)}</Button>
+                    <Button onClick={disconnectWeb3Modal}>
+                        {ensName.length > 0 ? ensName : trimAddress(connectedAccount)}
+                    </Button>
                     // <Button onClick={disconnectWeb3Modal}>Disconnect Wallet</Button>
                 )}
             </Flex>
@@ -128,7 +130,9 @@ function App() {
                 </Flex>
             </Center>
             <Flex w="100%" flexDirection="column" alignItems="center" justifyContent={"center"}>
-                <Heading mt={42}>Get all the ERC-20 token balances of this address:</Heading>
+                <Heading mt={42} mb={10}>
+                    Get all the ERC-20 token balances of this address:
+                </Heading>
                 <Stack>
                     <Input
                         onChange={(e) => setUserAddress(e.target.value)}
@@ -156,25 +160,6 @@ function App() {
                                         tokenDataObject={tokenDataObjects[i]}
                                         tokenBalance={e.tokenBalance}
                                     />
-                                    // <Flex
-                                    //     flexDir={"column"}
-                                    //     color="white"
-                                    //     bg="blue"
-                                    //     w={"30vw"}
-                                    //     key={e.id}
-                                    // >
-                                    //     <Box>
-                                    //         <b>Symbol:</b> ${tokenDataObjects[i].symbol}&nbsp;
-                                    //     </Box>
-                                    //     <Box>
-                                    //         <b>Balance:</b>&nbsp;
-                                    //         {Utils.formatUnits(
-                                    //             e.tokenBalance,
-                                    //             tokenDataObjects[i].decimals
-                                    //         )}
-                                    //     </Box>
-                                    //     <Image src={tokenDataObjects[i].logo} />
-                                    // </Flex>
                                 )
                             })}
                         </SimpleGrid>
