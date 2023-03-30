@@ -10,11 +10,14 @@ import {
     Text,
     Spacer,
     Spinner,
+    Stack,
 } from "@chakra-ui/react"
 import { Alchemy, Network, Utils } from "alchemy-sdk"
 import { useState } from "react"
 import Web3Modal from "web3modal"
 import { ethers } from "ethers"
+import TokenCard from "./components/TokenCard"
+import trimAddress from "./utils/format"
 // import CoinbaseWalletSDK from "@coinbase/wallet-sdk"
 // import WalletConnect from "@walletconnect/web3-provider"
 
@@ -23,7 +26,10 @@ function App() {
     const [results, setResults] = useState([])
     const [hasQueried, setHasQueried] = useState(false)
     const [tokenDataObjects, setTokenDataObjects] = useState([])
+    const [ensName, setEnsName] = useState("")
     const [connectedAccount, setConnectedAccount] = useState("")
+
+    const provider = new ethers.providers.Web3Provider(window.ethereum)
 
     const providerOptions = {
         binancechainwallet: {
@@ -52,6 +58,14 @@ function App() {
         providerOptions, // required
     })
 
+    async function loadENSName(address) {
+        const ensName = await provider.lookupAddress(address)
+        console.log("hello")
+        console.log(ensName)
+
+        if (!!ensName) setEnsName(ensName)
+    }
+
     async function connectWeb3Wallet() {
         try {
             const web3Provider = await web3Modal.connect()
@@ -59,6 +73,7 @@ function App() {
             const web3Accounts = await library.listAccounts()
             const network = await library.getNetwork()
             setConnectedAccount(web3Accounts[0])
+            setEnsName(loadENSName(web3Accounts[0]))
         } catch (error) {
             console.log(error)
         }
@@ -73,11 +88,11 @@ function App() {
         setHasQueried(false)
         const config = {
             apiKey: process.env.REACT_APP_ALCHEMY_API_KEY,
-            network: Network.ETH_GOERLI,
+            network: Network.ETH_MAINNET,
         }
 
         const alchemy = new Alchemy(config)
-        const data = await alchemy.core.getTokenBalances(connectedAccount)
+        const data = await alchemy.core.getTokenBalances(userAddress)
 
         setResults(data)
 
@@ -93,17 +108,12 @@ function App() {
     }
     return (
         <Box w="100vw">
-            <Flex minWidth="max-content" alignItems="center" gap="2">
-                <Box p="2">
-                    <Text>{connectedAccount && <p>Connected to ${connectedAccount}</p>}</Text>
-                    {/* <Heading size="md">Chakra App</Heading> */}
-                </Box>
-                <Spacer />
-
+            <Flex justify="end" mr="16px" mt="16px">
                 {!connectedAccount ? (
                     <Button onClick={connectWeb3Wallet}>Connect Wallet</Button>
                 ) : (
-                    <Button onClick={disconnectWeb3Modal}>Disconnect Wallet</Button>
+                    <Button>{ensName.length > 0 ? ensName : trimAddress(connectedAccount)}</Button>
+                    // <Button onClick={disconnectWeb3Modal}>Disconnect Wallet</Button>
                 )}
             </Flex>
             <Center>
@@ -119,69 +129,68 @@ function App() {
             </Center>
             <Flex w="100%" flexDirection="column" alignItems="center" justifyContent={"center"}>
                 <Heading mt={42}>Get all the ERC-20 token balances of this address:</Heading>
-                <Text
-                    color="black"
-                    w="600px"
-                    textAlign="center"
-                    p={4}
-                    bgColor="white"
-                    fontSize={24}
-                >
-                    {connectedAccount}
-                </Text>
-                {/* <Input
-                    onChange={(e) => setUserAddress(e.target.value)}
-                    color="black"
-                    w="600px"
-                    textAlign="center"
-                    p={4}
-                    bgColor="white"
-                    fontSize={24}
-                /> */}
-                <Button fontSize={20} onClick={getTokenBalance} mt={36} bgColor="blue">
-                    Check ERC-20 Token Balances
-                </Button>
+                <Stack>
+                    <Input
+                        onChange={(e) => setUserAddress(e.target.value)}
+                        color="black"
+                        w="600px"
+                        textAlign="center"
+                        p={4}
+                        bgColor="white"
+                        fontSize={24}
+                        placeholder="Enter address or ENS name."
+                    />
+                    <Button fontSize={20} onClick={getTokenBalance} mt={36} colorScheme="blue">
+                        Check ERC-20 Token Balances
+                    </Button>
+                </Stack>
+                <Stack>
+                    <Heading my={36}>ERC-20 token balances:</Heading>
 
-                <Heading my={36}>ERC-20 token balances:</Heading>
-
-                {hasQueried ? (
-                    <SimpleGrid w={"90vw"} columns={3} spacing={24}>
-                        {results.tokenBalances.map((e, i) => {
-                            return (
-                                <Flex
-                                    flexDir={"column"}
-                                    color="white"
-                                    bg="blue"
-                                    w={"30vw"}
-                                    key={e.id}
-                                >
-                                    <Box>
-                                        <b>Symbol:</b> ${tokenDataObjects[i].symbol}&nbsp;
-                                    </Box>
-                                    <Box>
-                                        <b>Balance:</b>&nbsp;
-                                        {Utils.formatUnits(
-                                            e.tokenBalance,
-                                            tokenDataObjects[i].decimals
-                                        )}
-                                    </Box>
-                                    <Image src={tokenDataObjects[i].logo} />
-                                </Flex>
-                            )
-                        })}
-                    </SimpleGrid>
-                ) : results.length != 0 ? (
-                    <Flex alignItems={"center"} flexDirection="column">
-                        <Box>
-                            <Spinner size="xl" />
-                        </Box>
-                        <Box>
-                            <Text>This may take a few seconds...</Text>
-                        </Box>
-                    </Flex>
-                ) : (
-                    <Box></Box>
-                )}
+                    {hasQueried ? (
+                        <SimpleGrid w={"90vw"} columns={4} spacing={5}>
+                            {results.tokenBalances.map((e, i) => {
+                                return (
+                                    <TokenCard
+                                        key={i}
+                                        tokenDataObject={tokenDataObjects[i]}
+                                        tokenBalance={e.tokenBalance}
+                                    />
+                                    // <Flex
+                                    //     flexDir={"column"}
+                                    //     color="white"
+                                    //     bg="blue"
+                                    //     w={"30vw"}
+                                    //     key={e.id}
+                                    // >
+                                    //     <Box>
+                                    //         <b>Symbol:</b> ${tokenDataObjects[i].symbol}&nbsp;
+                                    //     </Box>
+                                    //     <Box>
+                                    //         <b>Balance:</b>&nbsp;
+                                    //         {Utils.formatUnits(
+                                    //             e.tokenBalance,
+                                    //             tokenDataObjects[i].decimals
+                                    //         )}
+                                    //     </Box>
+                                    //     <Image src={tokenDataObjects[i].logo} />
+                                    // </Flex>
+                                )
+                            })}
+                        </SimpleGrid>
+                    ) : results.length != 0 ? (
+                        <Flex alignItems={"center"} flexDirection="column">
+                            <Box>
+                                <Spinner size="xl" />
+                            </Box>
+                            <Box>
+                                <Text>This may take a few seconds...</Text>
+                            </Box>
+                        </Flex>
+                    ) : (
+                        <Box></Box>
+                    )}
+                </Stack>
             </Flex>
         </Box>
     )
