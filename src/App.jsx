@@ -52,7 +52,7 @@ function App() {
     }
 
     const web3Modal = new Web3Modal({
-        network: "goerli",
+        network: "mainnet",
         theme: "light", // optional, 'dark' / 'light',
         cacheProvider: false, // optional
         providerOptions, // required
@@ -60,10 +60,12 @@ function App() {
 
     async function loadENSName(address) {
         const ensName = await provider.lookupAddress(address)
-        console.log("hello")
-        console.log(ensName)
-
         if (!!ensName) setEnsName(ensName)
+    }
+
+    async function resolveENSNameToAddress(ensName) {
+        const address = await provider.resolveName(ensName)
+        return address
     }
 
     async function connectWeb3Wallet() {
@@ -71,7 +73,7 @@ function App() {
             const web3Provider = await web3Modal.connect()
             const library = new ethers.providers.Web3Provider(web3Provider)
             const web3Accounts = await library.listAccounts()
-            const network = await library.getNetwork()
+            // const network = await library.getNetwork()
             setConnectedAccount(web3Accounts[0])
             setEnsName(loadENSName(web3Accounts[0]))
         } catch (error) {
@@ -115,7 +117,6 @@ function App() {
                     <Button onClick={disconnectWeb3Modal}>
                         {ensName.length > 0 ? ensName : trimAddress(connectedAccount)}
                     </Button>
-                    // <Button onClick={disconnectWeb3Modal}>Disconnect Wallet</Button>
                 )}
             </Flex>
             <Center>
@@ -135,7 +136,15 @@ function App() {
                 </Heading>
                 <Stack>
                     <Input
-                        onChange={(e) => setUserAddress(e.target.value)}
+                        onChange={(e) => {
+                            if (e.target.value.slice(0, 2) === "0x") {
+                                setUserAddress(e.target.value)
+                            } else {
+                                resolveENSNameToAddress(e.target.value).then((address) => {
+                                    setUserAddress(address)
+                                })
+                            }
+                        }}
                         color="black"
                         w="600px"
                         textAlign="center"
