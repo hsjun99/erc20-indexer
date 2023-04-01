@@ -3,14 +3,13 @@ import { Image, Text, Card, CardBody, Stack, Heading, Box, Divider, Flex } from 
 import { Utils } from "alchemy-sdk"
 
 const TokenCard = ({ tokenDataObject, tokenBalance }) => (
-    // <Box rounded="md" boxShadow="lg">
     <Card maxW="sm">
         <CardBody>
             <Stack mt="6" spacing="3">
                 <Heading size="md">
                     <Flex gap={1}>
                         {tokenDataObject.logo && (
-                            <Image src={tokenDataObject.logo} boxSize="25px" />
+                            <Image src={tokenDataObject.logo} boxSize="20px" />
                         )}
                         {tokenDataObject.name}
                     </Flex>
@@ -31,7 +30,6 @@ const TokenCard = ({ tokenDataObject, tokenBalance }) => (
             </Stack>
         </CardBody>
     </Card>
-    // </Box>
 )
 
 export default TokenCard
